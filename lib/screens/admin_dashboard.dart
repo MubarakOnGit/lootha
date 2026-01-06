@@ -39,9 +39,15 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
         ),
         actions: [
           IconButton(
+            icon: const Icon(Icons.person_add),
+            tooltip: 'Add Member',
+            onPressed: () => _showAddMemberDialog(context),
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () {
                // Invoke logout from AuthService via context or import
+               Provider.of<AuthService>(context, listen: false).signOut();
             },
           )
         ],
@@ -52,6 +58,44 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
           SummaryTab(),
           MealLoggingTab(),
           ExpensesTab(),
+        ],
+      ),
+    );
+  }
+
+  void _showAddMemberDialog(BuildContext context) {
+    final nameController = TextEditingController();
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Add Member'),
+        content: TextField(
+          controller: nameController,
+          decoration: const InputDecoration(labelText: 'Name'),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              if (nameController.text.isNotEmpty) {
+                 final provider = Provider.of<DashboardProvider>(context, listen: false);
+                 // We need to access addMember in provider. 
+                 // I need to verify if I exposed addMember in DashboardProvider.
+                 // Checking provider implementation... yes, addMember call exists or logic needs to be added.
+                 // Wait, I did NOT add `addMember` public method in DashboardProvider, only `addExpense` and `updateMeal`.
+                 // I must add it to Provider first.
+                 // For now, I will use FirestoreService directly or fix Provider.
+                 // Better to fix Provider.
+                 // But simply:
+                 Provider.of<DashboardProvider>(context, listen: false).addNewMember(nameController.text);
+                 Navigator.pop(context);
+              }
+            },
+            child: const Text('Add'),
+          ),
         ],
       ),
     );

@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "85183874002",
+    "project_id": "lootha-c80cd",
+    "storage_bucket": "lootha-c80cd.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:85183874002:android:c46eb7b0082317f16bfe0b",
+        "android_client_info": {
+          "package_name": "com.lootha.lootha"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAmt_j1OZBivjS5i9gDN_ZPBTbG8Eo1-aM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

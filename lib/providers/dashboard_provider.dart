@@ -149,9 +149,14 @@ class DashboardProvider with ChangeNotifier {
   Future<void> updateMeal(DateTime date, String memberId, int count) async {
     final dateId = DateFormat('yyyy-MM-dd').format(date);
     await _db.updateMealCount(dateId, memberId, count);
-    
-    // Also ensuring the daily entry has the monthId for querying
-    // This part requires a bit more logic in Service to ensure monthId is set on the document.
-    // For MVP demo, this is sufficient.
+  }
+
+  Future<void> addNewMember(String name) async {
+    final member = Member(
+      id: '', // Firestore auto-gen
+      name: name,
+      role: 'member',
+    );
+    await _db.addMember(member);
   }
 }
