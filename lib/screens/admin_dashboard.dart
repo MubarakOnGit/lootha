@@ -2,6 +2,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
+import '../services/services.dart';
 import '../providers/dashboard_provider.dart';
 import '../models/app_models.dart';
 
@@ -65,13 +66,18 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
 
   void _showAddMemberDialog(BuildContext context) {
     final nameController = TextEditingController();
+    final emailController = TextEditingController();
+    
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
         title: const Text('Add Member'),
-        content: TextField(
-          controller: nameController,
-          decoration: const InputDecoration(labelText: 'Name'),
+        content: Column(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             TextField(controller: nameController, decoration: const InputDecoration(labelText: 'Name')),
+             TextField(controller: emailController, decoration: const InputDecoration(labelText: 'Email (for Login)')),
+           ],
         ),
         actions: [
           TextButton(
@@ -80,17 +86,9 @@ class _AdminDashboardState extends State<AdminDashboard> with SingleTickerProvid
           ),
           ElevatedButton(
             onPressed: () {
-              if (nameController.text.isNotEmpty) {
-                 final provider = Provider.of<DashboardProvider>(context, listen: false);
-                 // We need to access addMember in provider. 
-                 // I need to verify if I exposed addMember in DashboardProvider.
-                 // Checking provider implementation... yes, addMember call exists or logic needs to be added.
-                 // Wait, I did NOT add `addMember` public method in DashboardProvider, only `addExpense` and `updateMeal`.
-                 // I must add it to Provider first.
-                 // For now, I will use FirestoreService directly or fix Provider.
-                 // Better to fix Provider.
-                 // But simply:
-                 Provider.of<DashboardProvider>(context, listen: false).addNewMember(nameController.text);
+              if (nameController.text.isNotEmpty && emailController.text.isNotEmpty) {
+                 Provider.of<DashboardProvider>(context, listen: false)
+                     .addNewMember(nameController.text, emailController.text);
                  Navigator.pop(context);
               }
             },
@@ -145,9 +143,25 @@ class SummaryTab extends StatelessWidget {
               child: ListTile(
                 leading: CircleAvatar(child: Text(m.name[0])),
                 title: Text(m.name),
-                trailing: Text(
-                  '₹${due.ceil()}', // Rounding Up for display
-                  style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+                subtitle: Text(m.email.isNotEmpty ? m.email : 'No Email'), // Show Email
+                trailing: Row(
+                   mainAxisSize: MainAxisSize.min,
+                   children: [
+                      Text(
+                        '₹${due.ceil()}', 
+                        style: TextStyle(
+                           fontWeight: FontWeight.bold, 
+                           fontSize: 16,
+                           color: due > 0 ? Colors.red : Colors.green
+                        ),
+                      ),
+                      const SizedBox(width: 8),
+                      // Add Payment Button
+                      IconButton(
+                        icon: const Icon(Icons.payments, color: Colors.blue),
+                        onPressed: () => _showPaymentDialog(context, m),
+                      ),
+                   ],
                 ),
               ),
             );
@@ -155,6 +169,47 @@ class SummaryTab extends StatelessWidget {
         ],
       ),
     );
+  }
+  
+  void _showPaymentDialog(BuildContext context, Member member) {
+     final amountCtrl = TextEditingController();
+     final notesCtrl = TextEditingController();
+     String type = 'Payment'; // or Advance
+     
+     showDialog(
+       context: context,
+       builder: (ctx) => AlertDialog(
+         title: Text('Add Transaction for ${member.name}'),
+         content: Column(
+           mainAxisSize: MainAxisSize.min,
+           children: [
+             DropdownButtonFormField<String>(
+               initialValue: type,
+               items: ['Payment', 'Advance'].map((t) => DropdownMenuItem(value: t, child: Text(t))).toList(),
+               onChanged: (v) => type = v!,
+               decoration: const InputDecoration(labelText: 'Type'),
+             ),
+             const SizedBox(height: 8),
+             TextField(controller: amountCtrl, decoration: const InputDecoration(labelText: 'Amount'), keyboardType: TextInputType.number),
+             const SizedBox(height: 8),
+             TextField(controller: notesCtrl, decoration: const InputDecoration(labelText: 'Notes')),
+           ],
+         ),
+         actions: [
+            TextButton(onPressed: () => Navigator.pop(ctx), child: const Text('Cancel')),
+            ElevatedButton(
+              onPressed: () {
+                 if (amountCtrl.text.isNotEmpty) {
+                    Provider.of<DashboardProvider>(context, listen: false)
+                        .addPayment(member.id, double.tryParse(amountCtrl.text) ?? 0, type, notesCtrl.text);
+                    Navigator.pop(ctx);
+                 }
+              },
+              child: const Text('Save'),
+            )
+         ],
+       ),
+     );
   }
 
   Widget _buildCard(String title, String value, IconData icon, Color color) {

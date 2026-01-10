@@ -65,6 +65,16 @@ class FirestoreService {
     }, SetOptions(merge: true));
   }
   
+  // Payments
+  Stream<List<Payment>> getPayments() {
+    return _db.collection('payments').orderBy('date', descending: true).snapshots().map((s) => 
+      s.docs.map((d) => Payment.fromMap(d.data(), d.id)).toList());
+  }
+
+  Future<void> addPayment(Payment payment) {
+    return _db.collection('payments').add(payment.toMap());
+  }
+  
   // Get all entries for a month (need a better query or just get all for now and filter locally if dataset is small, 
   // or store monthId on daily_entry too. Assuming dateId="YYYY-MM-DD", we can't easily range query string IDs efficiently without a separate field.
   // Adding 'monthId' to DailyEntry is better.

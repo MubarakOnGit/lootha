@@ -17,6 +17,8 @@ class DashboardProvider with ChangeNotifier {
   List<Expense> get expenses => _expenses;
   
   List<DailyEntry> _dailyEntries = [];
+  List<Payment> _payments = [];
+  List<Payment> get payments => _payments;
   
   // Loading State
   bool _isLoading = true;
@@ -42,6 +44,12 @@ class DashboardProvider with ChangeNotifier {
      // Listen to daily entries for current month
     _db.getDailyEntriesForMonth(_currentMonthId).listen((entries) {
       _dailyEntries = entries;
+      _calculateTotals();
+    });
+
+    // Listen to payments
+    _db.getPayments().listen((payments) {
+      _payments = payments;
       _calculateTotals();
     });
   }
@@ -124,15 +132,34 @@ class DashboardProvider with ChangeNotifier {
        _memberDues[m.id] = due;
     }
     
-    // Safety check for Rounding Up
-    // Sum of all member dues for Mess vs Total Mess
-    // We can apply a small ceil buffer if needed.
+    // 5. Subtract Payments (Advances/Payments)
+    // We need to check if the payment is relevant to the current period or total balance.
+    // For simplicity in this app, we assume a running balance or just subtract all payments made by member.
+    // Ideally, we filter by month too, but usually payments settle previous dues.
+    // Let's subtract ALL payments for now.
+    for (var p in _payments) {
+      if (_memberDues.containsKey(p.memberId)) {
+        _memberDues[p.memberId] = (_memberDues[p.memberId] ?? 0) - p.amount;
+      }
+    }
     
     _isLoading = false;
     notifyListeners();
   }
 
   // Actions
+  Future<void> addPayment(String memberId, double amount, String type, String notes) async {
+    final payment = Payment(
+      id: '',
+      memberId: memberId,
+      amount: amount,
+      date: DateTime.now(),
+      type: type,
+      notes: notes,
+    );
+    await _db.addPayment(payment);
+  }
+
   Future<void> addExpense(String title, String category, double amount) async {
     final expense = Expense(
       id: '', // Firestore auto-gen
@@ -151,10 +178,11 @@ class DashboardProvider with ChangeNotifier {
     await _db.updateMealCount(dateId, memberId, count);
   }
 
-  Future<void> addNewMember(String name) async {
+  Future<void> addNewMember(String name, String email) async {
     final member = Member(
       id: '', // Firestore auto-gen
       name: name,
+      email: email,
       role: 'member',
     );
     await _db.addMember(member);

@@ -3,12 +3,14 @@
 class Member {
   final String id;
   final String name;
+  final String email;
   final String role; // 'admin' or 'member'
   final bool isActive;
 
   Member({
     required this.id,
     required this.name,
+    required this.email,
     required this.role,
     this.isActive = true,
   });
@@ -17,6 +19,7 @@ class Member {
     return Member(
       id: documentId,
       name: data['name'] ?? '',
+      email: data['email'] ?? '',
       role: data['role'] ?? 'member',
       isActive: data['isActive'] ?? true,
     );
@@ -25,6 +28,7 @@ class Member {
   Map<String, dynamic> toMap() {
     return {
       'name': name,
+      'email': email,
       'role': role,
       'isActive': isActive,
     };
@@ -95,6 +99,46 @@ class DailyEntry {
   Map<String, dynamic> toMap() {
     return {
       'meals': meals,
+    };
+  }
+}
+
+// Payment/Credit Model
+class Payment {
+  final String id;
+  final String memberId;
+  final double amount;
+  final DateTime date;
+  final String type; // 'Payment' (Member paid bill) or 'Advance' (Member gave money in advance)
+  final String notes;
+
+  Payment({
+    required this.id,
+    required this.memberId,
+    required this.amount,
+    required this.date,
+    required this.type,
+    required this.notes,
+  });
+
+  factory Payment.fromMap(Map<String, dynamic> data, String documentId) {
+    return Payment(
+      id: documentId,
+      memberId: data['memberId'] ?? '',
+      amount: (data['amount'] ?? 0).toDouble(),
+      date: (data['date'] as dynamic)?.toDate() ?? DateTime.now(),
+      type: data['type'] ?? 'Payment',
+      notes: data['notes'] ?? '',
+    );
+  }
+
+  Map<String, dynamic> toMap() {
+    return {
+      'memberId': memberId,
+      'amount': amount,
+      'date': date,
+      'type': type,
+      'notes': notes,
     };
   }
 }
